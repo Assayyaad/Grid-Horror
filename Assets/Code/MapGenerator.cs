@@ -35,6 +35,7 @@ public class MapGenerator : Singleton<MapGenerator>
         this.finalRooms = new List<Room>(this.MainPaths.Length);
 
         this.GenerateMap();
+        this.DistributeShards();
 
         foreach (Room room in this.allRooms)
         {
@@ -53,6 +54,7 @@ public class MapGenerator : Singleton<MapGenerator>
         this.finalRooms = new List<Room>(this.MainPaths.Length);
 
         this.GenerateMap();
+        this.DistributeShards();
     }
 
     private void GenerateMap()
@@ -70,7 +72,7 @@ public class MapGenerator : Singleton<MapGenerator>
         }
 
         Vector2Int startPos = new Vector2Int(this.WorldSize.x / 2, this.WorldSize.y / 2);
-        Room startRoom = new Room(startPos, RoomType.Start);
+        Room startRoom = new Room(startPos, RoomType.Home);
         this.allRooms.Add(startRoom);
         this.roomDict.Add(startPos, startRoom);
 
@@ -86,52 +88,74 @@ public class MapGenerator : Singleton<MapGenerator>
             }
         }
 
-        foreach (Room room in this.allRooms)
+        //foreach (Room room in this.allRooms)
+        //{
+        //    Vector2Int upPos = room.position + (Vector2Int.up * this.RoomSize.y);
+        //    Vector2Int downPos = room.position + (Vector2Int.down * this.RoomSize.y);
+        //    Vector2Int rightPos = room.position + (Vector2Int.right * this.RoomSize.x);
+        //    Vector2Int leftPos = room.position + (Vector2Int.left * this.RoomSize.x);
+
+        //    RoomDoorDirection dir = RoomDoorDirection.Up;
+
+        //    if (!room.doors.Contains(dir) && this.roomDict.ContainsKey(upPos))
+        //    {
+        //        room.doors.Add(dir);
+
+        //        Room otherRoom = this.roomDict[upPos];
+        //        otherRoom.doors.Add(this.GetOppositeDirection(dir));
+        //    }
+
+        //    dir = RoomDoorDirection.Down;
+
+        //    if (!room.doors.Contains(dir) && this.roomDict.ContainsKey(downPos))
+        //    {
+        //        room.doors.Add(dir);
+
+        //        Room otherRoom = this.roomDict[downPos];
+        //        otherRoom.doors.Add(this.GetOppositeDirection(dir));
+        //    }
+
+        //    dir = RoomDoorDirection.Right;
+
+        //    if (!room.doors.Contains(dir) && this.roomDict.ContainsKey(rightPos))
+        //    {
+        //        room.doors.Add(dir);
+
+        //        Room otherRoom = this.roomDict[rightPos];
+        //        otherRoom.doors.Add(this.GetOppositeDirection(dir));
+        //    }
+
+        //    dir = RoomDoorDirection.Left;
+
+        //    if (!room.doors.Contains(dir) && this.roomDict.ContainsKey(leftPos))
+        //    {
+        //        room.doors.Add(dir);
+
+        //        Room otherRoom = this.roomDict[leftPos];
+        //        otherRoom.doors.Add(this.GetOppositeDirection(dir));
+        //    }
+        //}
+    }
+
+    private void DistributeShards()
+    {
+        int len = this.roomDict.Keys.Count;
+        for (int i = 0; i < this.shards; i++)
         {
-            Vector2Int upPos = room.position + (Vector2Int.up * this.RoomSize.y);
-            Vector2Int downPos = room.position + (Vector2Int.down * this.RoomSize.y);
-            Vector2Int rightPos = room.position + (Vector2Int.right * this.RoomSize.x);
-            Vector2Int leftPos = room.position + (Vector2Int.left * this.RoomSize.x);
+            int rand;
+            Room room;
 
-            RoomDoorDirection dir = RoomDoorDirection.Up;
-
-            if (!room.doors.Contains(dir) && this.roomDict.ContainsKey(upPos))
+            do
             {
-                room.doors.Add(dir);
-
-                Room otherRoom = this.roomDict[upPos];
-                otherRoom.doors.Add(this.GetOppositeDirection(dir));
+                rand = Random.Range(0, len);
+                room = this.roomDict.Values.ElementAt(rand);
+                if (room.type == RoomType.Normal)
+                {
+                    room.type = RoomType.Shard;
+                    break;
+                }
             }
-
-            dir = RoomDoorDirection.Down;
-
-            if (!room.doors.Contains(dir) && this.roomDict.ContainsKey(downPos))
-            {
-                room.doors.Add(dir);
-
-                Room otherRoom = this.roomDict[downPos];
-                otherRoom.doors.Add(this.GetOppositeDirection(dir));
-            }
-
-            dir = RoomDoorDirection.Right;
-
-            if (!room.doors.Contains(dir) && this.roomDict.ContainsKey(rightPos))
-            {
-                room.doors.Add(dir);
-
-                Room otherRoom = this.roomDict[rightPos];
-                otherRoom.doors.Add(this.GetOppositeDirection(dir));
-            }
-
-            dir = RoomDoorDirection.Left;
-
-            if (!room.doors.Contains(dir) && this.roomDict.ContainsKey(leftPos))
-            {
-                room.doors.Add(dir);
-
-                Room otherRoom = this.roomDict[leftPos];
-                otherRoom.doors.Add(this.GetOppositeDirection(dir));
-            }
+            while (true);
         }
     }
 
@@ -183,7 +207,7 @@ public class MapGenerator : Singleton<MapGenerator>
             { continue; }
 
             // Create the next room
-            Room nextRoom = new Room(nextPos, i == len - 1 ? RoomType.End : RoomType.Normal);
+            Room nextRoom = new Room(nextPos, i == len - 1 ? RoomType.Exit : RoomType.Normal);
 
             // Add doors to both rooms
             currRoom.doors.Add(dir);
@@ -235,6 +259,8 @@ public class MapGenerator : Singleton<MapGenerator>
 
         return directions.ToArray();
     }
+
+    public void OpenExit() => throw new System.NotImplementedException();
 
 #if UNITY_EDITOR
     private void OnDrawGizmos()

@@ -164,9 +164,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46febef962d4db94699421d78c23189e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MonsterSpeed: 1
-  DetectionRange: 3
-  MonsterPatience: 5
 --- !u!212 &363597788
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -254,7 +251,7 @@ MonoBehaviour:
   WorldSize: {x: 100, y: 100}
   RoomSize: {x: 3, y: 3}
   MaxSameDirTimes: 100
-  MainPaths: 32000000320000003200000032000000
+  MainPaths: 3c0000001e0000000500000005000000
   shards: 3
 --- !u!4 &365512720
 Transform:
@@ -535,6 +532,13 @@ MonoBehaviour:
   - {fileID: -8941519833378295907, guid: 3206ccafa38870342b940cc2f22174f2, type: 3}
   - {fileID: 7827470447151488021, guid: fd80463199397af4d88c7b3f24a64926, type: 3}
   - {fileID: 8894105245806051599, guid: 7c269f640afb07d418dfc83cce0d1bd5, type: 3}
+  themes:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

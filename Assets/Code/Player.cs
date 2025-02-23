@@ -15,22 +15,28 @@ public class Player : Singleton<Player>
         this.camera = Camera.main;
     }
 
+    private void Start()
+    {
+        this.GetComponent<SpriteRenderer>().sprite = GameManager.Instance.Tiles[(int)RoomTileType.S];
+    }
+
     private void Update()
     {
         // Move the player towards the target room
         if (this.targetRoom != null)
         {
+            //this.currentRoom.Exit();
+
             this.transform.position = Vector3.MoveTowards(this.transform.position, new Vector3(this.targetRoom.position.x + 0.5f, this.targetRoom.position.y + 0.5f, 0), Time.deltaTime * this.PlayerSpeed);
             // Check if the player has reached the target room
             if (Vector3.Distance(this.transform.position, new Vector3(this.targetRoom.position.x + 0.5f, this.targetRoom.position.y + 0.5f, 0)) < 0.1f)
             {
                 this.currentRoom = this.targetRoom;
                 this.targetRoom = null;
-            }
-        }
 
-        if (this.targetRoom != null)
-        {
+                this.currentRoom.Enter();
+            }
+
             return;
         }
 

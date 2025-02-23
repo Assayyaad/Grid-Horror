@@ -3,14 +3,14 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
-public enum RoomType : byte { Start, End, Normal }
+public enum RoomType : byte { Normal, Home, Exit, Shard }
 
 public enum RoomTileType : byte
 {
     TopLeftWall = 0, TopWall = 1, TopRightWall = 2, LeftWall = 5, RightWall = 7, BottomLeftWall = 10, BottomWall = 11, BottomRightWall = 12,
     II = 3, III = 4, IIII = 8, IIIII = 9, Cross = 6,
     DoorOpenH = 16, DoorOpenV = 17, DoorCloseH = 21, DoorCloseV = 22,
-    Dot = 13, Empty = 14, Other1 = 15, Other2 = 20,
+    Dot = 13, Empty = 14, ExitOff = 15, ExitOn = 20,
     Skull = 18, Home = 19, S = 23, X = 24
 }
 
@@ -33,7 +33,10 @@ public class Room
     public List<RoomDoorDirection> doors = new List<RoomDoorDirection>(4);
     public RoomType type;
 
+    private SpriteRenderer center => this.tiles[4];
+
     private GameObject obj;
+    private SpriteRenderer[] tiles = new SpriteRenderer[9];
 
     public Room(Vector2Int position, RoomType type = RoomType.Normal)
     {
@@ -46,7 +49,7 @@ public class Room
         this.doors.Add(direction);
     }
 
-    public void InitObj()
+    public void InitObj(int gridSize = 3)
     {
         int x = this.position.x;
         int y = this.position.y;
@@ -54,13 +57,31 @@ public class Room
         this.obj = new GameObject($"Room_{x}_{y}");
         this.obj.transform.position = new Vector3(x, y, 0);
 
-        int gridSize = 3; // Assuming a 3x3 grid for the room tiles
-        int tileOffset = 1; // Assuming each tile is 1 unit in size
-
         for (int i = 0; i < roomTileTypes.Length; i++)
         {
             RoomTileType tileType = Room.roomTileTypes[i];
+            tileType = CheckDoorTiles(i, tileType);
 
+            if (i == 4 && tileType == RoomTileType.Empty)
+            {
+                tileType = GetCenterTileType();
+            }
+
+            int tileX = i % gridSize;
+            int tileY = i / gridSize;
+
+            GameObject rendObj = new GameObject(tileType.ToString());
+            rendObj.transform.SetParent(this.obj.transform);
+            rendObj.transform.localPosition = new Vector3(0.5f + (tileX - 1), 0.5f + (tileY - 1), 0);
+
+            SpriteRenderer rend = rendObj.AddComponent<SpriteRenderer>();
+            rend.sprite = GameManager.Instance.Tiles[(int)tileType];
+
+            this.tiles[i] = rend;
+        }
+
+        RoomTileType CheckDoorTiles(int i, RoomTileType tileType)
+        {
             if (this.doors.Contains(RoomDoorDirection.Up) && i == 7)
             {
                 tileType = roomDoorTileTypes[i];
@@ -78,28 +99,45 @@ public class Room
                 tileType = roomDoorTileTypes[i];
             }
 
-            if (tileType == RoomTileType.Empty)
+            return tileType;
+        }
+
+        RoomTileType GetCenterTileType()
+        {
+            if (this.type == RoomType.Home)
             {
-                if (this.type == RoomType.Start && i == 4)
-                {
-                    tileType = RoomTileType.Home;
-                }
-                else if (this.type == RoomType.End && i == 4)
-                {
-                    tileType = RoomTileType.Other2;
-                }
+                return RoomTileType.Home;
+            }
+            else if (this.type == RoomType.Exit)
+            {
+                return RoomTileType.ExitOn;
+            }
+            else if (this.type == RoomType.Shard)
+            {
+                return RoomTileType.X;
             }
 
-            int tileX = i % gridSize;
-            int tileY = i / gridSize;
-
-            GameObject rendObj = new GameObject(tileType.ToString());
-            rendObj.transform.SetParent(this.obj.transform);
-            rendObj.transform.localPosition = new Vector3(0.5f + ((tileX - 1) * tileOffset), 0.5f + ((tileY - 1) * tileOffset), 0);
-
-            SpriteRenderer rend = rendObj.AddComponent<SpriteRenderer>();
-            rend.sprite = Loader.Instance.tiles[(int)tileType];
-
+            return RoomTileType.Empty;
         }
+    }
+
+    public void Enter()
+    {
+        if (this.type == RoomType.Shard)
+        {
+            this.type = RoomType.Normal;
+            this.center.sprite = GameManager.Instance.Tiles[(int)RoomTileType.Empty];
+        }
+        else if (this.type == RoomType.Exit)
+        {
+            Debug.Log("You win!");
+        }
+
+        //this.center.gameObject.SetActive(false);
+    }
+
+    public void Exit()
+    {
+        //this.center.gameObject.SetActive(true);
     }
 }

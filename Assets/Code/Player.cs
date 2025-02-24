@@ -7,8 +7,7 @@ public class Player : Singleton<Player>
     public static event Action PlayerDied;
 
     public float PlayerSpeed = 5f; // Player movement speed
-    public float PlayerPatience = 5f; // Time in seconds to wait before switching to Searching
-    private Room currentRoom;
+    public Room currentRoom { get; private set; }
     private Room targetRoom;
 
     private new Camera camera;
@@ -91,6 +90,11 @@ public class Player : Singleton<Player>
 #if UNITY_EDITOR
     private void OnDrawGizmos()
     {
+        if (MapGenerator.Instance == null)
+        {
+            return;
+        }
+
         Gizmos.color = Color.green;
         Gizmos.DrawSphere(this.transform.position, MapGenerator.Instance.RoomSize.x * 0.5f);
     }

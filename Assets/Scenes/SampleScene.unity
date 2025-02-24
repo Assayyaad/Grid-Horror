@@ -166,7 +166,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 1.5
   detectionRange: 3
-  patience: 5
 --- !u!212 &363597788
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -332,7 +331,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 3
+  orthographic size: 4
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -725,8 +724,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b87cfcec38a787c46a97289eb48569a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PlayerSpeed: 5
-  PlayerPatience: 5
+  PlayerSpeed: 7
 --- !u!212 &2140145635
 SpriteRenderer:
   m_ObjectHideFlags: 0

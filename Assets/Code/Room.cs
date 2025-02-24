@@ -48,11 +48,6 @@ public class Room
         this.type = type;
     }
 
-    public void AddDoor(RoomDoorDirection direction)
-    {
-        this.doors.Add(direction);
-    }
-
     public void InitObj(int gridSize = 3)
     {
         int x = this.position.x;
@@ -64,11 +59,13 @@ public class Room
         for (int i = 0; i < roomTileTypes.Length; i++)
         {
             RoomTileType tileType = Room.roomTileTypes[i];
-            tileType = CheckDoorTiles(i, tileType);
-
-            if (i == 4 && tileType == RoomTileType.Empty)
+            if (i == 4)
             {
                 tileType = GetCenterTileType();
+            }
+            else
+            {
+                tileType = CheckDoorTiles(i, tileType);
             }
 
             int tileX = i % gridSize;

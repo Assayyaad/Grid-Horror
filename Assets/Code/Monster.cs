@@ -2,38 +2,42 @@ using System.Collections;
 
 using UnityEngine;
 
-public enum MonsterState { Patrolling, Searching, Chasing }
+//public enum MonsterState { Patrolling, Searching, Chasing }
+public enum MonsterState { Patrolling, Chasing }
 
 public class Monster : Singleton<Monster>
 {
     // Data
     public float speed = 1f; // Speed in rooms per second
     public int detectionRange = 3; // Detection range in rooms
-    public float patience = 5f; // Time in seconds to wait before switching to Searching
+    //public float patience = 5f; // Time in seconds to wait before switching to Searching
 
+    private Room PRoom => this.player.currentRoom;
     private Vector3 PPos => this.player.transform.position;
+    private Vector2Int PPosInt => new Vector2Int((int)this.PPos.x, (int)this.PPos.y);
 
+    private MonsterState state = MonsterState.Patrolling;
     private Room currentRoom;
     private Room targetRoom;
-    private MonsterState state = MonsterState.Patrolling;
-    private Vector2Int? lastSeen = null; // Last known player position
+    private Room lastSeen = null; // Last known player position
     private float waitTime = 0f; // Time spent waiting in a room
 
     private Coroutine behaviorLoop;
     private MapGenerator map;
     private Player player;
 
-    protected override void Awake()
-    {
-        base.Awake();
-    }
-
-    void Start()
+    private void Start()
     {
         this.map = MapGenerator.Instance;
         this.player = Player.Instance;
 
         this.GetComponent<SpriteRenderer>().sprite = GameManager.Instance.Tiles[(int)RoomTileType.Skull];
+    }
+
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+        this.StopCoroutine(this.behaviorLoop);
     }
 
     public void WakeUp(Room room)
@@ -57,9 +61,9 @@ public class Monster : Singleton<Monster>
             case MonsterState.Patrolling:
                 this.PatrolBehavior();
                 break;
-            case MonsterState.Searching:
-                this.SearchBehavior();
-                break;
+            //case MonsterState.Searching:
+            //    this.SearchBehavior();
+            //    break;
             case MonsterState.Chasing:
                 this.ChaseBehavior();
                 break;
@@ -72,7 +76,7 @@ public class Monster : Singleton<Monster>
         // Choose a random direction from available doors
         int randDirIndex = Random.Range(0, this.currentRoom.doors.Count);
         RoomDoorDirection randomDir = this.currentRoom.doors[randDirIndex];
-        this.targetRoom = this.GetRoomInDirection(this.currentRoom.position, randomDir);
+        this.targetRoom = this.GetRoomInDirection(randomDir);
 
         // Move the monster to the target room
         this.MoveToRoom(targetRoom);
@@ -81,50 +85,49 @@ public class Monster : Singleton<Monster>
         if (this.DetectPlayer())
         {
             this.state = MonsterState.Chasing;
-            this.lastSeen = new Vector2Int((int)this.PPos.x, (int)this.PPos.y);
+            this.lastSeen = this.PRoom;
         }
-        else if (this.waitTime >= this.patience)
-        {
-            this.state = MonsterState.Searching;
-            this.waitTime = 0f;
-        }
+        //else if (this.waitTime >= this.patience)
+        //{
+        //    this.state = MonsterState.Searching;
+        //    this.waitTime = 0f;
+        //}
         else
         {
             this.waitTime += 1f / this.speed;
         }
     }
 
-    private void SearchBehavior()
-    {
-        if (lastSeen.HasValue)
-        {
-            // Move towards the last known player position
-            RoomDoorDirection direction = this.GetDirectionToTarget(this.currentRoom.position, lastSeen.Value);
-            this.targetRoom = this.GetRoomInDirection(this.currentRoom.position, direction);
+    //private void SearchBehavior()
+    //{
+    //    if (this.lastSeen == null)
+    //    { return; }
 
-            // Move the monster to the target room
-            this.MoveToRoom(this.targetRoom);
+    //    // Move towards the last known player position
+    //    RoomDoorDirection dir = this.GetDirectionToTarget(this.lastSeen);
+    //    this.targetRoom = this.GetRoomInDirection(dir);
 
-            // Check for player detection
-            if (this.DetectPlayer())
-            {
-                this.state = MonsterState.Chasing;
-                this.lastSeen = new Vector2Int((int)this.PPos.x, (int)this.PPos.y);
-            }
-            else if (this.currentRoom.position == this.lastSeen.Value)
-            {
-                // Reached last known position, return to patrolling
-                this.state = MonsterState.Patrolling;
-            }
-        }
-    }
+    //    // Move the monster to the target room
+    //    this.MoveToRoom(this.targetRoom);
+
+    //    // Check for player detection
+    //    if (this.DetectPlayer())
+    //    {
+    //        this.state = MonsterState.Chasing;
+    //        this.lastSeen = this.PRoom;
+    //    }
+    //    else if (this.currentRoom == this.lastSeen)
+    //    {
+    //        // Reached last known position, return to patrolling
+    //        this.state = MonsterState.Patrolling;
+    //    }
+    //}
 
     private void ChaseBehavior()
     {
         // Move towards the player's current position
-        Vector2Int playerPos = new Vector2Int((int)this.PPos.x, (int)this.PPos.y);
-        RoomDoorDirection direction = this.GetDirectionToTarget(this.currentRoom.position, playerPos);
-        this.targetRoom = this.GetRoomInDirection(this.currentRoom.position, direction);
+        RoomDoorDirection dir = this.GetDirectionToTarget(this.PRoom);
+        this.targetRoom = this.GetRoomInDirection(dir);
 
         // Move the monster to the target room
         this.MoveToRoom(this.targetRoom);
@@ -132,10 +135,11 @@ public class Monster : Singleton<Monster>
         // Check if the player is still in detection range
         if (!this.DetectPlayer())
         {
-            this.state = MonsterState.Searching;
-            this.lastSeen = playerPos;
+            //this.state = MonsterState.Searching;
+            this.state = MonsterState.Patrolling;
+            this.lastSeen = this.PRoom;
         }
-        else if (this.currentRoom.position == playerPos)
+        else if (this.currentRoom == this.PRoom)
         {
             // Monster caught the player, trigger game over
             Debug.Log("Game Over! Monster caught the player.");
@@ -152,13 +156,13 @@ public class Monster : Singleton<Monster>
     private bool DetectPlayer()
     {
         // Calculate the distance to the player
-        float distance = Vector2Int.Distance(this.currentRoom.position, new Vector2Int((int)this.PPos.x, (int)this.PPos.y));
+        float distance = Vector2Int.Distance(this.currentRoom.position, this.PPosInt);
         return distance <= detectionRange;
     }
 
-    private Room GetRoomInDirection(Vector2Int position, RoomDoorDirection direction)
+    private Room GetRoomInDirection(RoomDoorDirection direction)
     {
-        Vector2Int nextPos = position;
+        Vector2Int nextPos = this.currentRoom.position;
         switch (direction)
         {
         case RoomDoorDirection.Up:
@@ -176,12 +180,12 @@ public class Monster : Singleton<Monster>
         }
 
         // Find the room at the next position
-        return this.map.allRooms.Find(room => room.position == nextPos);
+        return this.map.roomDict[nextPos];
     }
 
-    private RoomDoorDirection GetDirectionToTarget(Vector2Int currentPos, Vector2Int targetPos)
+    private RoomDoorDirection GetDirectionToTarget(Room targetRoom)
     {
-        Vector2Int delta = targetPos - currentPos;
+        Vector2Int delta = targetRoom.position - this.currentRoom.position;
         if (Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
         {
             return delta.x > 0 ? RoomDoorDirection.Right : RoomDoorDirection.Left;

@@ -22,6 +22,7 @@ public class GameManager : Singleton<GameManager>
         base.Awake();
 
         this.theme = (byte)Random.Range(0, this.themes.Length);
+        this.theme = 2;
 
         //PlayerSettings.fullScreenMode = FullScreenMode.FullScreenWindow;
     }

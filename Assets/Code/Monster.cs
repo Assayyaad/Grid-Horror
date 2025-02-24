@@ -26,70 +26,33 @@ public class Monster : Singleton<Monster>
     protected override void Awake()
     {
         base.Awake();
-        this.map = MapGenerator.Instance;
-        this.player = Player.Instance;
     }
 
     void Start()
     {
+        this.map = MapGenerator.Instance;
+        this.player = Player.Instance;
+
         this.GetComponent<SpriteRenderer>().sprite = GameManager.Instance.Tiles[(int)RoomTileType.Skull];
+    }
 
-        // Initialize the world and rooms
-        this.InitializeWorld();
-
+    public void WakeUp(Room room)
+    {
         // Set the monster's starting position to a random room
-        this.currentRoom = this.map.allRooms[Random.Range(0, this.map.allRooms.Count)];
-        this.transform.position = new Vector3(this.currentRoom.position.x + 0.5f, this.currentRoom.position.y + 0.5f, 0);
-
-        // Find the player in the scene
-        this.player = GameObject.FindFirstObjectByType<Player>(FindObjectsInactive.Include);
+        this.currentRoom = room;
+        this.transform.position = new Vector3(room.position.x + 0.5f, room.position.y + 0.5f, 0);
 
         // Start the monster's behavior loop
         this.behaviorLoop = this.StartCoroutine(this.MonsterBehaviorLoop());
     }
 
-    void InitializeWorld()
-    {
-        // Generate a simple grid of rooms
-        for (int x = 0; x < this.map.WorldSize.x; x++)
-        {
-            for (int y = 0; y < this.map.WorldSize.y; y++)
-            {
-                Room room = new Room(new Vector2Int(x, y));
-
-                // Add doors to all adjacent rooms (simplified for this example)
-                if (x > 0)
-                {
-                    room.doors.Add(RoomDoorDirection.Left);
-                }
-
-                if (x < this.map.WorldSize.x - 1)
-                {
-                    room.doors.Add(RoomDoorDirection.Right);
-                }
-
-                if (y > 0)
-                {
-                    room.doors.Add(RoomDoorDirection.Down);
-                }
-
-                if (y < this.map.WorldSize.y - 1)
-                {
-                    room.doors.Add(RoomDoorDirection.Up);
-                }
-
-                this.map.allRooms.Add(room);
-            }
-        }
-    }
-
-    IEnumerator MonsterBehaviorLoop()
+    private IEnumerator MonsterBehaviorLoop()
     {
         while (true)
         {
-            yield return new WaitForSeconds(1f / speed); // Wait based on monster speed
+            yield return new WaitForSeconds(1f / this.speed); // Wait based on monster speed
 
-            switch (state)
+            switch (this.state)
             {
             case MonsterState.Patrolling:
                 this.PatrolBehavior();
@@ -104,10 +67,11 @@ public class Monster : Singleton<Monster>
         }
     }
 
-    void PatrolBehavior()
+    private void PatrolBehavior()
     {
         // Choose a random direction from available doors
-        RoomDoorDirection randomDir = this.currentRoom.doors[Random.Range(0, this.currentRoom.doors.Count)];
+        int randDirIndex = Random.Range(0, this.currentRoom.doors.Count);
+        RoomDoorDirection randomDir = this.currentRoom.doors[randDirIndex];
         this.targetRoom = this.GetRoomInDirection(this.currentRoom.position, randomDir);
 
         // Move the monster to the target room
@@ -130,7 +94,7 @@ public class Monster : Singleton<Monster>
         }
     }
 
-    void SearchBehavior()
+    private void SearchBehavior()
     {
         if (lastSeen.HasValue)
         {
@@ -155,7 +119,7 @@ public class Monster : Singleton<Monster>
         }
     }
 
-    void ChaseBehavior()
+    private void ChaseBehavior()
     {
         // Move towards the player's current position
         Vector2Int playerPos = new Vector2Int((int)this.PPos.x, (int)this.PPos.y);
@@ -179,35 +143,35 @@ public class Monster : Singleton<Monster>
         }
     }
 
-    void MoveToRoom(Room room)
+    private void MoveToRoom(Room room)
     {
         this.currentRoom = room;
         this.transform.position = new Vector3(room.position.x + 0.5f, room.position.y + 0.5f, 0);
     }
 
-    bool DetectPlayer()
+    private bool DetectPlayer()
     {
         // Calculate the distance to the player
         float distance = Vector2Int.Distance(this.currentRoom.position, new Vector2Int((int)this.PPos.x, (int)this.PPos.y));
         return distance <= detectionRange;
     }
 
-    Room GetRoomInDirection(Vector2Int position, RoomDoorDirection direction)
+    private Room GetRoomInDirection(Vector2Int position, RoomDoorDirection direction)
     {
         Vector2Int nextPos = position;
         switch (direction)
         {
         case RoomDoorDirection.Up:
-            nextPos += new Vector2Int(0, 1);
-            break;
-        case RoomDoorDirection.Right:
-            nextPos += new Vector2Int(1, 0);
+            nextPos += Vector2Int.up * this.map.RoomSize.y;
             break;
         case RoomDoorDirection.Down:
-            nextPos += new Vector2Int(0, -1);
+            nextPos += Vector2Int.down * this.map.RoomSize.y;
+            break;
+        case RoomDoorDirection.Right:
+            nextPos += Vector2Int.right * this.map.RoomSize.x;
             break;
         case RoomDoorDirection.Left:
-            nextPos += new Vector2Int(-1, 0);
+            nextPos += Vector2Int.left * this.map.RoomSize.x;
             break;
         }
 
@@ -215,7 +179,7 @@ public class Monster : Singleton<Monster>
         return this.map.allRooms.Find(room => room.position == nextPos);
     }
 
-    RoomDoorDirection GetDirectionToTarget(Vector2Int currentPos, Vector2Int targetPos)
+    private RoomDoorDirection GetDirectionToTarget(Vector2Int currentPos, Vector2Int targetPos)
     {
         Vector2Int delta = targetPos - currentPos;
         if (Mathf.Abs(delta.x) > Mathf.Abs(delta.y))

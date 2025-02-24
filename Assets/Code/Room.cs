@@ -1,4 +1,5 @@
 // Room class to store room data
+using System;
 using System.Collections.Generic;
 
 using UnityEngine;
@@ -16,6 +17,9 @@ public enum RoomTileType : byte
 
 public class Room
 {
+    public static event Action GameWon;
+    public static event Action ShardCollected;
+
     public static RoomTileType[] roomTileTypes = new RoomTileType[]
     {
         RoomTileType.BottomLeftWall, RoomTileType.BottomWall, RoomTileType.BottomRightWall,
@@ -110,7 +114,7 @@ public class Room
             }
             else if (this.type == RoomType.Exit)
             {
-                return RoomTileType.ExitOn;
+                return RoomTileType.ExitOff;
             }
             else if (this.type == RoomType.Shard)
             {
@@ -127,17 +131,27 @@ public class Room
         {
             this.type = RoomType.Normal;
             this.center.sprite = GameManager.Instance.Tiles[(int)RoomTileType.Empty];
+
+            Room.ShardCollected?.Invoke();
         }
-        else if (this.type == RoomType.Exit)
+        else if (this.type == RoomType.Exit && MapGenerator.Instance.IsExitOpen)
         {
-            Debug.Log("You win!");
+            Room.GameWon?.Invoke();
         }
 
         //this.center.gameObject.SetActive(false);
     }
 
-    public void Exit()
+    public void OpenExit()
     {
-        //this.center.gameObject.SetActive(true);
+        if (this.type == RoomType.Exit)
+        {
+            this.center.sprite = GameManager.Instance.Tiles[(int)RoomTileType.ExitOn];
+        }
     }
+
+    //public void Exit()
+    //{
+    //    this.center.gameObject.SetActive(true);
+    //}
 }

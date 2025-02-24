@@ -1,7 +1,11 @@
+using System;
+
 using UnityEngine;
 
 public class Player : Singleton<Player>
 {
+    public static event Action PlayerDied;
+
     public float PlayerSpeed = 5f; // Player movement speed
     public float PlayerPatience = 5f; // Time in seconds to wait before switching to Searching
     private Room currentRoom;

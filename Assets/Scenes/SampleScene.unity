@@ -254,7 +254,7 @@ MonoBehaviour:
   WorldSize: {x: 100, y: 100}
   RoomSize: {x: 3, y: 3}
   MaxSameDirTimes: 100
-  MainPaths: 3c0000001e0000000500000005000000
+  MainPaths: 3c000000320000001e0000000a000000
   shards: 3
 --- !u!4 &365512720
 Transform:

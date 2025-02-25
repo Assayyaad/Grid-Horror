@@ -64,7 +64,7 @@ public class Monster : Unit<Monster>
             this.waitTime = 0;
             this.lastSeen = room;
 
-            this.currentPath = AStar.FindPath(this.currentRoom, room);
+            this.currentPath = AStar.FindPath(this.currentRoom, this.lastSeen);
             this.currentPathIndex = 0;
 
             this.state = MonsterState.Chasing;
@@ -74,11 +74,11 @@ public class Monster : Unit<Monster>
 
     private Room ChaseBehavior()
     {
-        if (this.LookForPlayer())
+        if (this.lastSeen != this.PRoom && this.LookForPlayer())
         {
             this.lastSeen = this.PRoom;
 
-            this.currentPath = AStar.FindPath(this.currentRoom, this.PRoom);
+            this.currentPath = AStar.FindPath(this.currentRoom, this.lastSeen);
             this.currentPathIndex = 0;
         }
         else if (this.currentRoom == this.lastSeen)
@@ -86,26 +86,21 @@ public class Monster : Unit<Monster>
             this.lastSeen = null;
         }
 
-        if (this.lastSeen == null)
+        if (this.lastSeen == null || this.currentPath == null || this.currentPathIndex >= this.currentPath.Count)
         {
             this.state = MonsterState.Patrolling;
             return this.PatrolBehavior();
         }
 
-        if (this.currentPath != null && this.currentPathIndex < this.currentPath.Count)
-        {
-            return this.currentPath[this.currentPathIndex++];
-        }
-
-        this.state = MonsterState.Patrolling;
-        return this.PatrolBehavior();
+        return this.currentPath[this.currentPathIndex++];
     }
 
     private bool LookForPlayer()
     {
         Vector2Int size = MapGenerator.Instance.RoomSize;
 
-        float dis = Vector2Int.Distance(this.currentRoom.position, this.PRoom.position) / size.magnitude;
+        float dis = Vector2Int.Distance(this.currentRoom.position, this.PRoom.position);
+        dis /= size.magnitude;
         return dis <= detectionRange;
     }
 

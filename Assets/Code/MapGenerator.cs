@@ -93,12 +93,8 @@ public class MapGenerator : Singleton<MapGenerator>
         for (int i = 0; i < this.MainPaths.Length; i++)
         {
             Room[] path = this.CreatePath(this.allRooms[0], this.MainPaths[i]);
-
-            if (path.Length > 0)
-            {
-                // Store the final room of the path
-                this.finalRooms.Add(path[path.Length - 1]);
-            }
+            if (path != null)
+            { this.finalRooms.Add(path[path.Length - 1]); }
         }
 
         ConnectAllRooms();
@@ -241,6 +237,9 @@ public class MapGenerator : Singleton<MapGenerator>
             this.allRooms.Add(currRoom);
             this.roomDict.Add(nextPos, currRoom);
         }
+
+        if (path.Count == 0)
+        { return null; }
 
         return path.ToArray();
     }

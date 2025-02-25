@@ -135,8 +135,6 @@ public class Room
         {
             Room.GameWon?.Invoke();
         }
-
-        //this.center.gameObject.SetActive(false);
     }
 
     public void OpenExit()
@@ -146,9 +144,4 @@ public class Room
             this.center.sprite = GameManager.Instance.Tiles[(int)RoomTileType.ExitOn];
         }
     }
-
-    //public void Exit()
-    //{
-    //    this.center.gameObject.SetActive(true);
-    //}
 }

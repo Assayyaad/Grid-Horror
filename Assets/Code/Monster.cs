@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 using UnityEngine;
 
 //public enum MonsterState { Patrolling, Searching, Chasing }
@@ -9,25 +11,12 @@ public class Monster : Unit<Monster>
     public int detectionRange = 3; // Detection range in rooms
     //public float patience = 5f; // Time in seconds to wait before switching to Searching
 
-    private Room PRoom => this.player.currentRoom;
-    private Vector3 PPos => this.player.transform.position;
-    private Vector2Int PPosInt => new Vector2Int((int)this.PPos.x, (int)this.PPos.y);
+    private Room PRoom => Player.Instance.currentRoom;
 
     private MonsterState state = MonsterState.Patrolling;
-    //private Room lastSeen = null; // Last known player position
-    //private float waitTime = 0f; // Time spent waiting in a room
+    private Room lastSeen = null;
+
     public override RoomTileType type => RoomTileType.Skull;
-
-    private MapGenerator map;
-    private Player player;
-
-    protected override void Start()
-    {
-        base.Start();
-
-        this.map = MapGenerator.Instance;
-        this.player = Player.Instance;
-    }
 
     public void WakeUp(Room room)
     {
@@ -41,7 +30,6 @@ public class Monster : Unit<Monster>
         return this.state switch
         {
             MonsterState.Patrolling => this.PatrolBehavior(),
-            //MonsterState.Searching => this.SearchBehavior(),
             MonsterState.Chasing => this.ChaseBehavior(),
             _ => null,
         };
@@ -51,117 +39,107 @@ public class Monster : Unit<Monster>
     {
         Room room = null;
 
+        if (this.LookForPlayer())
+        {
+            this.state = MonsterState.Chasing;
+            this.lastSeen = this.PRoom;
+            return this.ChaseBehavior();
+        }
+
         // Choose a random direction from available doors
         int randDirIndex = Random.Range(0, this.currentRoom.doors.Count);
         RoomDoorDirection randomDir = this.currentRoom.doors[randDirIndex];
         room = this.GetRoomInDirection(randomDir);
 
-        // Check for player detection
-        if (this.LookForPlayer())
-        {
-            this.state = MonsterState.Chasing;
-            //this.lastSeen = this.PRoom;
-        }
-        //else if (this.waitTime >= this.patience)
-        //{
-        //    this.state = MonsterState.Searching;
-        //    this.waitTime = 0f;
-        //}
-        else
-        {
-            //this.waitTime += 1f / this.speed;
-        }
-
         return room;
     }
-
-    //private void SearchBehavior()
-    //{
-    //    if (this.lastSeen == null)
-    //    { return; }
-
-    //    // Move towards the last known player position
-    //    RoomDoorDirection dir = this.GetDirectionToTarget(this.lastSeen);
-    //    this.targetRoom = this.GetRoomInDirection(dir);
-
-    //    // Check for player detection
-    //    if (this.DetectPlayer())
-    //    {
-    //        this.state = MonsterState.Chasing;
-    //        this.lastSeen = this.PRoom;
-    //    }
-    //    else if (this.currentRoom == this.lastSeen)
-    //    {
-    //        // Reached last known position, return to patrolling
-    //        this.state = MonsterState.Patrolling;
-    //    }
-    //}
 
     private Room ChaseBehavior()
     {
         Room room = null;
 
-        // Move towards the player's current position
-        RoomDoorDirection dir = this.GetDirectionToTarget(this.PRoom);
-        room = this.GetRoomInDirection(dir);
-
         // Check if the player is still in detection range
-        if (!this.LookForPlayer())
+        if (this.LookForPlayer())
         {
-            //this.state = MonsterState.Searching;
+            this.lastSeen = this.PRoom;
+        }
+        else
+        {
             this.state = MonsterState.Patrolling;
-            //this.lastSeen = this.PRoom;
+            this.lastSeen = null;
+            return this.PatrolBehavior();
         }
-        else if (this.currentRoom == this.PRoom)
-        {
-            // Monster caught the player, trigger game over
-            Debug.Log("Game Over! Monster caught the player.");
-            //Player.PlayerDied
-        }
+
+        // Move towards the player's current position
+        RoomDoorDirection dir = this.GetDirectionToTarget(this.lastSeen);
+        room = this.GetRoomInDirection(dir);
 
         return room;
     }
 
     private bool LookForPlayer()
     {
-        // Calculate the distance to the player
-        float distance = Vector2Int.Distance(this.currentRoom.position, this.PPosInt);
-        return distance <= detectionRange;
+        Vector2Int size = MapGenerator.Instance.RoomSize;
+
+        float dis = Vector2Int.Distance(this.currentRoom.position, this.PRoom.position) / size.magnitude;
+        int dis2 = Mathf.RoundToInt(dis);
+
+        return dis2 <= detectionRange;
     }
 
     private Room GetRoomInDirection(RoomDoorDirection direction)
     {
+        if (!this.currentRoom.doors.Contains(direction))
+        {
+            return null;
+        }
+
         Vector2Int nextPos = this.currentRoom.position;
         switch (direction)
         {
         case RoomDoorDirection.Up:
-            nextPos += Vector2Int.up * this.map.RoomSize.y;
+            nextPos += Vector2Int.up * MapGenerator.Instance.RoomSize.y;
             break;
         case RoomDoorDirection.Down:
-            nextPos += Vector2Int.down * this.map.RoomSize.y;
+            nextPos += Vector2Int.down * MapGenerator.Instance.RoomSize.y;
             break;
         case RoomDoorDirection.Right:
-            nextPos += Vector2Int.right * this.map.RoomSize.x;
+            nextPos += Vector2Int.right * MapGenerator.Instance.RoomSize.x;
             break;
         case RoomDoorDirection.Left:
-            nextPos += Vector2Int.left * this.map.RoomSize.x;
+            nextPos += Vector2Int.left * MapGenerator.Instance.RoomSize.x;
             break;
         }
 
-        // Find the room at the next position
-        return this.map.roomDict[nextPos];
+        return MapGenerator.Instance.roomDict[nextPos];
     }
 
     private RoomDoorDirection GetDirectionToTarget(Room targetRoom)
     {
+        List<RoomDoorDirection> doors = this.currentRoom.doors;
+
         Vector2Int delta = targetRoom.position - this.currentRoom.position;
         if (Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
         {
-            return delta.x > 0 ? RoomDoorDirection.Right : RoomDoorDirection.Left;
+            if (delta.x > 0)
+            {
+                return RoomDoorDirection.Right;
+            }
+            else
+            {
+                return RoomDoorDirection.Left;
+            }
         }
         else
         {
-            return delta.y > 0 ? RoomDoorDirection.Up : RoomDoorDirection.Down;
+            if (delta.y > 0)
+            {
+                return RoomDoorDirection.Up;
+            }
+            else
+            {
+                return RoomDoorDirection.Down;
+            }
         }
     }
 }

@@ -22,9 +22,6 @@ public class GameManager : Singleton<GameManager>
         base.Awake();
 
         this.theme = (byte)Random.Range(0, this.themes.Length);
-        this.theme = 2;
-
-        //PlayerSettings.fullScreenMode = FullScreenMode.FullScreenWindow;
     }
 
     private void Start()
@@ -34,10 +31,6 @@ public class GameManager : Singleton<GameManager>
         Player.PlayerDied += this.OnPlayerDied;
 
         this.UpdateHUD();
-
-        //GameManager.Instance.;
-        //Player.Instance.;
-        //Monster.Instance.;
     }
 
     protected override void OnDestroy()

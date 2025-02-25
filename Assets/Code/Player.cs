@@ -9,6 +9,12 @@ public class Player : CameraUnit<Player>
 
     protected override Room ChooseTargetRoom()
     {
+        if (this.currentRoom == Monster.Instance.currentRoom)
+        {
+            this.Die();
+            return null;
+        }
+
         if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
         {
             if (this.currentRoom.doors.Contains(RoomDoorDirection.Up))
@@ -46,6 +52,12 @@ public class Player : CameraUnit<Player>
         // Set the player's starting position to the starting room
         this.currentRoom = room;
         this.transform.position = new Vector3(room.position.x + 0.5f, room.position.y + 0.5f, 0);
+    }
+
+    public void Die()
+    {
+        Player.PlayerDied?.Invoke();
+        this.gameObject.SetActive(false);
     }
 
 #if UNITY_EDITOR

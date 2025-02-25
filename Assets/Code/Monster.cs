@@ -7,13 +7,14 @@ public class Monster : Unit<Monster>
 {
     // Data
     public int detectionRange = 3; // Detection range in rooms
-    //public float patience = 5f; // Time in seconds to wait before switching to Searching
 
     private Room PRoom => Player.Instance.currentRoom;
 
     private MonsterState state = MonsterState.Patrolling;
     private Room lastSeen = null;
-    //private RoomDoorDirection lastRandDir;
+    [SerializeField]
+    private int scanDelay = 3;
+    private int waitTime = 0;
 
     public override RoomTileType type => RoomTileType.Skull;
 
@@ -41,53 +42,49 @@ public class Monster : Unit<Monster>
 
     private Room PatrolBehavior()
     {
-        Room room = null;
-
         if (this.LookForPlayer())
-        {
-            this.state = MonsterState.Chasing;
-            this.lastSeen = this.PRoom;
-            return this.ChaseBehavior();
-        }
+        { return Chase(this.PRoom); }
+
+        this.waitTime++;
+        if (this.waitTime >= this.scanDelay)
+        { return Chase(Player.Instance.currentRoom); }
 
         // Choose a random direction from available doors
         int randDirIndex = Random.Range(0, this.currentRoom.doors.Count);
         RoomDoorDirection randomDir = this.currentRoom.doors[randDirIndex];
 
-        //do
-        //{
-        //    randDirIndex = Random.Range(0, this.currentRoom.doors.Count);
-        //    randomDir = this.currentRoom.doors[randDirIndex];
-        //}
-        //while (this.lastRandDir == randomDir && this.currentRoom.doors.Count > 1);
+        return this.GetRoomInDirection(randomDir);
 
-        //this.lastRandDir = randomDir;
-        room = this.GetRoomInDirection(randomDir);
+        Room Chase(Room room)
+        {
+            this.waitTime = 0;
+            this.lastSeen = room;
 
-        return room;
+            this.state = MonsterState.Chasing;
+            return this.ChaseBehavior();
+        }
     }
 
     private Room ChaseBehavior()
     {
-        Room room = null;
-
-        // Check if the player is still in detection range
         if (this.LookForPlayer())
         {
             this.lastSeen = this.PRoom;
         }
-        else
+        else if (this.currentRoom == this.lastSeen)
+        {
+            this.lastSeen = null;
+        }
+
+        if (this.lastSeen == null)
         {
             this.state = MonsterState.Patrolling;
-            this.lastSeen = null;
             return this.PatrolBehavior();
         }
 
         // Move towards the player's current position
         RoomDoorDirection dir = this.GetDirectionToTarget(this.lastSeen);
-        room = this.GetRoomInDirection(dir);
-
-        return room;
+        return this.GetRoomInDirection(dir);
     }
 
     private bool LookForPlayer()

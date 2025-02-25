@@ -101,7 +101,7 @@ public class MapGenerator : Singleton<MapGenerator>
             }
         }
 
-        //ConnectAllRooms();
+        ConnectAllRooms();
 
         void ConnectAllRooms()
         {

@@ -6,8 +6,8 @@ public abstract class Unit<T> : Singleton<T>
     [SerializeField]
     protected float speed = 5f;
 
-    public Room currentRoom { get; protected set; }
-    protected Room targetRoom;
+    public Room currentRoom { get; protected set; } = null;
+    protected Room targetRoom = null;
 
     public virtual RoomTileType type { get; }
 

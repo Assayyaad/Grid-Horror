@@ -1,83 +1,44 @@
 using System;
 
 using UnityEngine;
-
-public class Player : Singleton<Player>
+public class Player : CameraUnit<Player>
 {
     public static event Action PlayerDied;
 
-    public float PlayerSpeed = 5f; // Player movement speed
-    public Room currentRoom { get; private set; }
-    private Room targetRoom;
+    public override RoomTileType type => RoomTileType.S;
 
-    private new Camera camera;
-
-    protected override void Awake()
+    protected override Room ChooseTargetRoom()
     {
-        base.Awake();
-        this.camera = Camera.main;
-    }
-
-    private void Start()
-    {
-        this.GetComponent<SpriteRenderer>().sprite = GameManager.Instance.Tiles[(int)RoomTileType.S];
-    }
-
-    private void Update()
-    {
-        // Move the player towards the target room
-        if (this.targetRoom != null)
-        {
-            //this.currentRoom.Exit();
-
-            this.transform.position = Vector3.MoveTowards(this.transform.position, new Vector3(this.targetRoom.position.x + 0.5f, this.targetRoom.position.y + 0.5f, 0), Time.deltaTime * this.PlayerSpeed);
-            // Check if the player has reached the target room
-            if (Vector3.Distance(this.transform.position, new Vector3(this.targetRoom.position.x + 0.5f, this.targetRoom.position.y + 0.5f, 0)) < 0.1f)
-            {
-                this.currentRoom = this.targetRoom;
-                this.targetRoom = null;
-
-                this.currentRoom.Enter();
-            }
-
-            return;
-        }
-
         if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
         {
             if (this.currentRoom.doors.Contains(RoomDoorDirection.Up))
             {
-                this.targetRoom = MapGenerator.Instance.roomDict[this.currentRoom.position + (Vector2Int.up * MapGenerator.Instance.RoomSize.y)];
+                return MapGenerator.Instance.roomDict[this.currentRoom.position + (Vector2Int.up * MapGenerator.Instance.RoomSize.y)];
             }
         }
         else if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
         {
             if (this.currentRoom.doors.Contains(RoomDoorDirection.Down))
             {
-                this.targetRoom = MapGenerator.Instance.roomDict[this.currentRoom.position + (Vector2Int.down * MapGenerator.Instance.RoomSize.y)];
+                return MapGenerator.Instance.roomDict[this.currentRoom.position + (Vector2Int.down * MapGenerator.Instance.RoomSize.y)];
             }
         }
         else if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
         {
             if (this.currentRoom.doors.Contains(RoomDoorDirection.Right))
             {
-                this.targetRoom = MapGenerator.Instance.roomDict[this.currentRoom.position + (Vector2Int.right * MapGenerator.Instance.RoomSize.x)];
+                return MapGenerator.Instance.roomDict[this.currentRoom.position + (Vector2Int.right * MapGenerator.Instance.RoomSize.x)];
             }
         }
         else if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
         {
             if (this.currentRoom.doors.Contains(RoomDoorDirection.Left))
             {
-                this.targetRoom = MapGenerator.Instance.roomDict[this.currentRoom.position + (Vector2Int.left * MapGenerator.Instance.RoomSize.x)];
+                return MapGenerator.Instance.roomDict[this.currentRoom.position + (Vector2Int.left * MapGenerator.Instance.RoomSize.x)];
             }
         }
-    }
 
-    private void LateUpdate()
-    {
-        Vector3 temp = this.transform.position;
-        temp.z = -10;
-        this.camera.transform.position = temp;
+        return null;
     }
 
     public void WakeUp(Room room)
@@ -90,7 +51,7 @@ public class Player : Singleton<Player>
 #if UNITY_EDITOR
     private void OnDrawGizmos()
     {
-        if (MapGenerator.Instance == null)
+        if (!UnityEditor.EditorApplication.isPlaying || MapGenerator.Instance == null)
         {
             return;
         }

@@ -26,12 +26,6 @@ public class Room
         RoomTileType.LeftWall, RoomTileType.Empty, RoomTileType.RightWall,
         RoomTileType.TopLeftWall, RoomTileType.TopWall, RoomTileType.TopRightWall,
     };
-    public static RoomTileType[] roomDoorTileTypes = new RoomTileType[]
-    {
-        RoomTileType.BottomLeftWall, RoomTileType.DoorOpenH, RoomTileType.BottomRightWall,
-        RoomTileType.DoorOpenV, RoomTileType.Empty, RoomTileType.DoorOpenV,
-        RoomTileType.TopLeftWall, RoomTileType.DoorOpenH, RoomTileType.TopRightWall,
-    };
 
     public Vector2Int position;
     public List<RoomDoorDirection> doors = new List<RoomDoorDirection>(4);
@@ -55,13 +49,14 @@ public class Room
 
         this.obj = new GameObject($"Room_{x}_{y}");
         this.obj.transform.position = new Vector3(x, y, 0);
+        int centerIndex = Mathf.FloorToInt(Room.roomTileTypes.Length * 0.5f);
 
-        for (int i = 0; i < roomTileTypes.Length; i++)
+        for (int i = 0; i < Room.roomTileTypes.Length; i++)
         {
             RoomTileType tileType = Room.roomTileTypes[i];
-            if (i == 4)
+            if (i == centerIndex)
             {
-                tileType = GetCenterTileType();
+                tileType = GetCenterTileType(this.type);
             }
             else
             {
@@ -83,37 +78,29 @@ public class Room
 
         RoomTileType CheckDoorTiles(int i, RoomTileType tileType)
         {
-            if (this.doors.Contains(RoomDoorDirection.Up) && i == 7)
+            if ((i == 7 && this.doors.Contains(RoomDoorDirection.Up)) || (i == 1 && this.doors.Contains(RoomDoorDirection.Down)))
             {
-                tileType = roomDoorTileTypes[i];
+                tileType = RoomTileType.DoorOpenH;
             }
-            else if (this.doors.Contains(RoomDoorDirection.Down) && i == 1)
+            else if ((i == 5 && this.doors.Contains(RoomDoorDirection.Right)) || (i == 3 && this.doors.Contains(RoomDoorDirection.Left)))
             {
-                tileType = roomDoorTileTypes[i];
-            }
-            else if (this.doors.Contains(RoomDoorDirection.Right) && i == 5)
-            {
-                tileType = roomDoorTileTypes[i];
-            }
-            else if (this.doors.Contains(RoomDoorDirection.Left) && i == 3)
-            {
-                tileType = roomDoorTileTypes[i];
+                tileType = RoomTileType.DoorOpenV;
             }
 
             return tileType;
         }
 
-        RoomTileType GetCenterTileType()
+        RoomTileType GetCenterTileType(RoomType type)
         {
-            if (this.type == RoomType.Home)
+            if (type == RoomType.Home)
             {
                 return RoomTileType.Home;
             }
-            else if (this.type == RoomType.Exit)
+            else if (type == RoomType.Exit)
             {
                 return RoomTileType.ExitOff;
             }
-            else if (this.type == RoomType.Shard)
+            else if (type == RoomType.Shard)
             {
                 return RoomTileType.X;
             }

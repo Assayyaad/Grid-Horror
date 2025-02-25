@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 using UnityEngine;
 
 //public enum MonsterState { Patrolling, Searching, Chasing }
@@ -15,6 +13,7 @@ public class Monster : Unit<Monster>
 
     private MonsterState state = MonsterState.Patrolling;
     private Room lastSeen = null;
+    //private RoomDoorDirection lastRandDir;
 
     public override RoomTileType type => RoomTileType.Skull;
 
@@ -27,6 +26,11 @@ public class Monster : Unit<Monster>
 
     protected override Room ChooseTargetRoom()
     {
+        if (!Player.Instance.gameObject.activeSelf)
+        {
+            return null;
+        }
+
         return this.state switch
         {
             MonsterState.Patrolling => this.PatrolBehavior(),
@@ -49,6 +53,15 @@ public class Monster : Unit<Monster>
         // Choose a random direction from available doors
         int randDirIndex = Random.Range(0, this.currentRoom.doors.Count);
         RoomDoorDirection randomDir = this.currentRoom.doors[randDirIndex];
+
+        //do
+        //{
+        //    randDirIndex = Random.Range(0, this.currentRoom.doors.Count);
+        //    randomDir = this.currentRoom.doors[randDirIndex];
+        //}
+        //while (this.lastRandDir == randomDir && this.currentRoom.doors.Count > 1);
+
+        //this.lastRandDir = randomDir;
         room = this.GetRoomInDirection(randomDir);
 
         return room;
@@ -82,9 +95,7 @@ public class Monster : Unit<Monster>
         Vector2Int size = MapGenerator.Instance.RoomSize;
 
         float dis = Vector2Int.Distance(this.currentRoom.position, this.PRoom.position) / size.magnitude;
-        int dis2 = Mathf.RoundToInt(dis);
-
-        return dis2 <= detectionRange;
+        return dis <= detectionRange;
     }
 
     private Room GetRoomInDirection(RoomDoorDirection direction)
@@ -116,30 +127,23 @@ public class Monster : Unit<Monster>
 
     private RoomDoorDirection GetDirectionToTarget(Room targetRoom)
     {
-        List<RoomDoorDirection> doors = this.currentRoom.doors;
+        RoomDoorDirection dir;
 
         Vector2Int delta = targetRoom.position - this.currentRoom.position;
         if (Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
         {
-            if (delta.x > 0)
-            {
-                return RoomDoorDirection.Right;
-            }
-            else
-            {
-                return RoomDoorDirection.Left;
-            }
+            dir = delta.x > 0 ? RoomDoorDirection.Right : RoomDoorDirection.Left;
         }
         else
         {
-            if (delta.y > 0)
-            {
-                return RoomDoorDirection.Up;
-            }
-            else
-            {
-                return RoomDoorDirection.Down;
-            }
+            dir = delta.y > 0 ? RoomDoorDirection.Up : RoomDoorDirection.Down;
         }
+
+        if (this.currentRoom.doors.Contains(dir))
+        {
+            return dir;
+        }
+
+        return this.currentRoom.doors[0];
     }
 }

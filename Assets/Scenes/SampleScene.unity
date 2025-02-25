@@ -165,7 +165,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 3.5
-  detectionRange: 3
+  detectionRange: 2
 --- !u!212 &363597788
 SpriteRenderer:
   m_ObjectHideFlags: 0

@@ -82,10 +82,10 @@ public static class AStar
 
         return door switch
         {
-            RoomDoorDirection.Up => position + Vector2Int.up * size.y,
-            RoomDoorDirection.Down => position + Vector2Int.down * size.y,
-            RoomDoorDirection.Right => position + Vector2Int.right * size.x,
-            RoomDoorDirection.Left => position + Vector2Int.left * size.x,
+            RoomDoorDirection.Up => position + (Vector2Int.up * size.y),
+            RoomDoorDirection.Down => position + (Vector2Int.down * size.y),
+            RoomDoorDirection.Right => position + (Vector2Int.right * size.x),
+            RoomDoorDirection.Left => position + (Vector2Int.left * size.x),
             _ => position,
         };
     }

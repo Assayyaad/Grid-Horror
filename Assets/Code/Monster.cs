@@ -1,12 +1,16 @@
+using System.Collections.Generic;
+
 using UnityEngine;
 
-//public enum MonsterState { Patrolling, Searching, Chasing }
 public enum MonsterState { Patrolling, Chasing }
 
 public class Monster : Unit<Monster>
 {
     // Data
     public int detectionRange = 3; // Detection range in rooms
+
+    private List<Room> currentPath = new();
+    private int currentPathIndex = 0;
 
     private Room PRoom => Player.Instance.currentRoom;
 
@@ -60,6 +64,9 @@ public class Monster : Unit<Monster>
             this.waitTime = 0;
             this.lastSeen = room;
 
+            this.currentPath = AStar.FindPath(this.currentRoom, room);
+            this.currentPathIndex = 0;
+
             this.state = MonsterState.Chasing;
             return this.ChaseBehavior();
         }
@@ -70,6 +77,9 @@ public class Monster : Unit<Monster>
         if (this.LookForPlayer())
         {
             this.lastSeen = this.PRoom;
+
+            this.currentPath = AStar.FindPath(this.currentRoom, this.PRoom);
+            this.currentPathIndex = 0;
         }
         else if (this.currentRoom == this.lastSeen)
         {
@@ -82,9 +92,13 @@ public class Monster : Unit<Monster>
             return this.PatrolBehavior();
         }
 
-        // Move towards the player's current position
-        RoomDoorDirection dir = this.GetDirectionToTarget(this.lastSeen);
-        return this.GetRoomInDirection(dir);
+        if (this.currentPath != null && this.currentPathIndex < this.currentPath.Count)
+        {
+            return this.currentPath[this.currentPathIndex++];
+        }
+
+        this.state = MonsterState.Patrolling;
+        return this.PatrolBehavior();
     }
 
     private bool LookForPlayer()
@@ -120,27 +134,5 @@ public class Monster : Unit<Monster>
         }
 
         return MapGenerator.Instance.roomDict[nextPos];
-    }
-
-    private RoomDoorDirection GetDirectionToTarget(Room targetRoom)
-    {
-        RoomDoorDirection dir;
-
-        Vector2Int delta = targetRoom.position - this.currentRoom.position;
-        if (Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
-        {
-            dir = delta.x > 0 ? RoomDoorDirection.Right : RoomDoorDirection.Left;
-        }
-        else
-        {
-            dir = delta.y > 0 ? RoomDoorDirection.Up : RoomDoorDirection.Down;
-        }
-
-        if (this.currentRoom.doors.Contains(dir))
-        {
-            return dir;
-        }
-
-        return this.currentRoom.doors[0];
     }
 }
